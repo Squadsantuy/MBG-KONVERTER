@@ -77,7 +77,7 @@
     </div>
 <script>
     const MBG_PER_DAY = 1200000000000; // 1,2 Triliun IDR
-    let rates = { IDR: 16000, USD: 1, SGD: 1.35, JPY: 150, SAR: 3.75 }; // Default fallback
+    let rates = { IDR: 17000, USD: 1, SGD: 1.35, JPY: 150, SAR: 3.75 }; // Default fallback
 
     async function fetchRates() {
         try {
@@ -93,9 +93,9 @@
             document.getElementById('rate-info').innerText = `1 USD = ${usdToIdr.toLocaleString('id-ID')} IDR`;
         } catch (err) {
             console.error("Fetch error:", err);
-            document.getElementById('rate-info').innerText = "Gagal memuat kurs. Menggunakan estimasi (16k).";
+            document.getElementById('rate-info').innerText = "Menggunakan estimasi (17k).";
             // Fallback jika API gagal
-            rates = { IDR: 16000, USD: 1, SGD: 1.35, JPY: 150, SAR: 3.75 };
+            rates = { IDR: 17000, USD: 1, SGD: 1.35, JPY: 150, SAR: 3.75 };
         }
     }
 
@@ -109,8 +109,8 @@
             valInIdr = amount;
         } else {
             // LOGIKA: (Jumlah / Rate Mata Uang Terpilih) * Rate IDR
-            // Contoh: (100 USD / 1 USD) * 16000 = 1.600.000 IDR
-            // Contoh: (100 SGD / 1.35 SGD) * 16000 = IDR
+            // Contoh: (100 USD / 1 USD) * 17000 = 1.700.000 IDR
+            // Contoh: (100 SGD / 1.35 SGD) * 17000 = IDR
             valInIdr = (amount / rates[currency]) * rates.IDR;
         }
 
