@@ -75,72 +75,74 @@
             </div>
         </div>
     </div>
+<script>
+    const MBG_PER_DAY = 1200000000000; // 1,2 Triliun IDR
+    let rates = { IDR: 16000, USD: 1, SGD: 1.35, JPY: 150, SAR: 3.75 }; // Default fallback
 
-    <script>
-        const MBG_PER_DAY = 1200000000000; // 1,2 Triliun IDR
-        let rates = { IDR: 1 };
+    async function fetchRates() {
+        try {
+            // Mengambil data dengan base USD
+            const res = await fetch('https://api.frankfurter.app/latest?from=USD');
+            const data = await res.json();
+            
+            // Simpan rates (Data ini berbasis 1 USD = X mata uang lain)
+            rates = data.rates;
+            rates.USD = 1; 
 
-        // Ambil Kurs Otomatis (Menggunakan API Frankfurter - Gratis/Tanpa Key)
-        async function fetchRates() {
-            try {
-                const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=IDR,SGD,JPY,SAR');
-                const data = await res.json();
-                rates = { 
-                    IDR: data.rates.IDR,
-                    USD: 1,
-                    SGD: 1 / (data.rates.IDR / data.rates.SGD), // Estimasi cross rate ke IDR
-                    JPY: 1 / (data.rates.IDR / data.rates.JPY),
-                    SAR: 1 / (data.rates.IDR / data.rates.SAR)
-                };
-                
-                // Normalisasi agar basisnya IDR
-                const usdToIdr = data.rates.IDR;
-                document.getElementById('rate-info').innerText = `1 USD = ${usdToIdr.toLocaleString('id-ID')} IDR`;
-            } catch (err) {
-                document.getElementById('rate-info').innerText = "Gagal memuat kurs. Menggunakan estimasi (17k).";
-                rates = { IDR: 1, USD: 17000, SGD: 12500, JPY: 110, SAR: 4500 };
-            }
+            const usdToIdr = rates.IDR;
+            document.getElementById('rate-info').innerText = `1 USD = ${usdToIdr.toLocaleString('id-ID')} IDR`;
+        } catch (err) {
+            console.error("Fetch error:", err);
+            document.getElementById('rate-info').innerText = "Gagal memuat kurs. Menggunakan estimasi (16k).";
+            // Fallback jika API gagal
+            rates = { IDR: 16000, USD: 1, SGD: 1.35, JPY: 150, SAR: 3.75 };
+        }
+    }
+
+    function calculate() {
+        const currency = document.getElementById('currency').value;
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        
+        let valInIdr = 0;
+
+        if (currency === 'IDR') {
+            valInIdr = amount;
+        } else {
+            // LOGIKA: (Jumlah / Rate Mata Uang Terpilih) * Rate IDR
+            // Contoh: (100 USD / 1 USD) * 16000 = 1.600.000 IDR
+            // Contoh: (100 SGD / 1.35 SGD) * 16000 = IDR
+            valInIdr = (amount / rates[currency]) * rates.IDR;
         }
 
-        function calculate() {
-            const currency = document.getElementById('currency').value;
-            const amount = document.getElementById('amount').value;
-            
-            // Konversi ke IDR dulu
-            let valInIdr;
-            if (currency === 'IDR') {
-                valInIdr = amount;
-            } else {
-                // Sederhananya kita pakai rate USD ke IDR dari API
-                valInIdr = amount * rates.IDR; // Jika base API kita ubah ke IDR
-            }
+        // Hitung Hari MBG
+        const totalDays = valInIdr / MBG_PER_DAY;
+        const totalSeconds = totalDays * 24 * 3600;
 
-            // Hitung Hari MBG
-            const totalDays = valInIdr / MBG_PER_DAY;
-            
-            // Breakdown Waktu
-            const totalSeconds = totalDays * 24 * 3600;
-            const days = Math.floor(totalDays);
-            const hours = Math.floor((totalSeconds / 3600) % 24);
-            const minutes = Math.floor((totalSeconds / 60) % 60);
-            const seconds = (totalSeconds % 60).toFixed(1);
+        // Breakdown Waktu untuk Tampilan
+        const days = Math.floor(totalDays);
+        const hours = Math.floor((totalSeconds / 3600) % 24);
+        const minutes = Math.floor((totalSeconds / 60) % 60);
+        const seconds = (totalSeconds % 60).toFixed(1);
 
-            // Update UI
-            document.getElementById('res-day').innerText = days;
-            document.getElementById('res-hour').innerText = hours;
-            document.getElementById('res-min').innerText = minutes;
-            document.getElementById('res-sec').innerText = Math.floor(seconds);
-            
-            if (totalSeconds < 60) {
-                document.getElementById('res-precise').innerText = `${seconds} Detik`;
-            } else if (totalSeconds < 3600) {
-                document.getElementById('res-precise').innerText = `${minutes} Menit ${Math.floor(seconds)} Detik`;
-            } else {
-                document.getElementById('res-precise').innerText = `${days} Hari ${hours} Jam`;
-            }
+        // Update UI
+        document.getElementById('res-day').innerText = days.toLocaleString('id-ID');
+        document.getElementById('res-hour').innerText = hours;
+        document.getElementById('res-min').innerText = minutes;
+        document.getElementById('res-sec').innerText = Math.floor(seconds);
+        
+        if (totalSeconds < 60) {
+            document.getElementById('res-precise').innerText = `${seconds} Detik`;
+        } else if (totalSeconds < 3600) {
+            document.getElementById('res-precise').innerText = `${minutes} Menit ${Math.floor(seconds)} Detik`;
+        } else if (totalSeconds < 86400) {
+            document.getElementById('res-precise').innerText = `${hours} Jam ${minutes} Menit`;
+        } else {
+            document.getElementById('res-precise').innerText = `${days} Hari ${hours} Jam`;
         }
+    }
 
-        fetchRates();
-    </script>
+    // Jalankan fetch saat halaman load
+    fetchRates();
+</script>   
 </body>
 </html>
